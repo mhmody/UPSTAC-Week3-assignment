@@ -2,41 +2,68 @@ package org.upgrad.upstac.testrequests;
 
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.web.server.ResponseStatusException;
+import org.upgrad.upstac.config.security.UserLoggedInService;
 import org.upgrad.upstac.testrequests.lab.CreateLabResult;
 import org.upgrad.upstac.testrequests.lab.LabRequestController;
 import org.upgrad.upstac.testrequests.lab.TestStatus;
+import org.upgrad.upstac.users.User;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
 @Slf4j
+@ExtendWith(MockitoExtension.class)
+
 class LabRequestControllerTest {
+
+    /*
 
 
     @Autowired
     LabRequestController labRequestController;
 
 
+    @Mock
+    TestRequestQueryService testRequestQueryService;
+    */
 
+    @InjectMocks
+    LabRequestController labRequestController;
+
+    @Mock
+    TestRequestUpdateService testRequestUpdateService;
 
     @Autowired
     TestRequestQueryService testRequestQueryService;
 
+    @Mock
+    UserLoggedInService userLoggedInService;
 
     @Test
     @WithUserDetails(value = "tester")
-    public void calling_assignForLabTest_with_valid_test_request_id_should_update_the_request_status(){
+    public void calling_assignForLabTest_with_valid_test_request_id_should_update_the_request_status() {
+
+
+        //Arrange
 
         TestRequest testRequest = getTestRequestByStatus(RequestStatus.INITIATED);
+        User user = userLoggedInService.getLoggedInUser();
+        TestRequest testRequestMock = new TestRequest();
+
+
         //Implement this method
 
         //Create another object of the TestRequest method and explicitly assign this object for Lab Test using assignForLabTest() method
@@ -48,18 +75,26 @@ class LabRequestControllerTest {
         // make use of assertNotNull() method to make sure that the lab result of second object is not null
         // use getLabResult() method to get the lab result
 
+        //Mock
+        Mockito.when(testRequestUpdateService.assignForLabTest(testRequest.getRequestId(),user)).thenReturn(testRequestMock);
 
+        //Act
+
+        //Assert
+        assertEquals(testRequest.requestId, testRequestMock.requestId);
+        assertEquals("LAB_TEST_IN_PROGRESS", testRequestMock.getStatus());
     }
 
     public TestRequest getTestRequestByStatus(RequestStatus status) {
         return testRequestQueryService.findBy(status).stream().findFirst().get();
+        //return testRequestQueryService.findBy(status).get(0);
     }
 
     @Test
     @WithUserDetails(value = "tester")
-    public void calling_assignForLabTest_with_valid_test_request_id_should_throw_exception(){
+    public void calling_assignForLabTest_with_valid_test_request_id_should_throw_exception() {
 
-        Long InvalidRequestId= -34L;
+        Long InvalidRequestId = -34L;
 
         //Implement this method
 
@@ -75,7 +110,7 @@ class LabRequestControllerTest {
 
     @Test
     @WithUserDetails(value = "tester")
-    public void calling_updateLabTest_with_valid_test_request_id_should_update_the_request_status_and_update_test_request_details(){
+    public void calling_updateLabTest_with_valid_test_request_id_should_update_the_request_status_and_update_test_request_details() {
 
         TestRequest testRequest = getTestRequestByStatus(RequestStatus.LAB_TEST_IN_PROGRESS);
 
@@ -89,15 +124,12 @@ class LabRequestControllerTest {
         //  1. the request ids of both the objects created should be same
         //  2. the status of the second object should be equal to 'LAB_TEST_COMPLETED'
         // 3. the results of both the objects created should be same. Make use of getLabResult() method to get the results.
-
-
-
     }
 
 
     @Test
     @WithUserDetails(value = "tester")
-    public void calling_updateLabTest_with_invalid_test_request_id_should_throw_exception(){
+    public void calling_updateLabTest_with_invalid_test_request_id_should_throw_exception() {
 
         TestRequest testRequest = getTestRequestByStatus(RequestStatus.LAB_TEST_IN_PROGRESS);
 
@@ -118,7 +150,7 @@ class LabRequestControllerTest {
 
     @Test
     @WithUserDetails(value = "tester")
-    public void calling_updateLabTest_with_invalid_empty_status_should_throw_exception(){
+    public void calling_updateLabTest_with_invalid_empty_status_should_throw_exception() {
 
         TestRequest testRequest = getTestRequestByStatus(RequestStatus.LAB_TEST_IN_PROGRESS);
 
@@ -145,5 +177,4 @@ class LabRequestControllerTest {
 
         return null; // Replace this line with your code
     }
-
 }
